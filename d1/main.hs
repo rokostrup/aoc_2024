@@ -1,21 +1,21 @@
 import Data.List
 
-testStr = "123   456\n567 111\n7 11\n"
-
 -- common
-strToInt :: [String] -> [Int]
-strToInt = map read
-
-parse = map sort . transpose . map (strToInt . words) . lines 
+parse :: String -> [[Int]]
+parse = map sort . transpose . map (map read . words) . lines 
 
 -- part 1
+solveP1 :: Num a => [a] -> [a] -> a
 solveP1 l1 l2 = sum $ map abs (zipWith (-) l1 l2)
 
 -- part 2
+counts :: Eq a => a -> [a] -> Int
 counts a = length . filter (==a)
 
+solveP2 :: [Int] -> [Int] -> Int
 solveP2 l1 l2 = sum $ map (\x -> x * counts x l2) l1
 
+main :: IO ()
 main = do
     input <- readFile "input.txt"
     let parsed = parse input
