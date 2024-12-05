@@ -2,6 +2,18 @@ use std::fs;
 
 fn get_contents() -> String {
     fs::read_to_string("input.txt").expect("Should have been able to read the file")
+    //     String::from(
+    //         r".M.S......
+    // ..A..MSMS.
+    // .M.S.MAA..
+    // ..A.ASMSM.
+    // .M.S.M....
+    // ..........
+    // S.S.S.S.S.
+    // .A.A.A.A..
+    // M.M.M.M.M.
+    // ..........",
+    //     )
 
     //     String::from(
     //         r"MMMSXXMASM
@@ -53,6 +65,7 @@ fn matches(char_vec: &CharLine, grid: &Vec<&str>, offset: Point) -> bool {
             return false;
         }
     }
+    println!("Match at {},{}", offset.x, offset.y);
     return true;
 }
 
@@ -114,14 +127,57 @@ fn create_needle_vec() -> Vec<CharLine> {
     needles
 }
 
+fn xmas(upper_left: u8, upper_right: u8, lower_left: u8, lower_right: u8) -> CharLine {
+    let mut cl = Vec::new();
+    let middle = CharPoint {
+        p: Point { x: 1, y: 1 },
+        c: b'A',
+    };
+
+    cl.push(middle);
+    cl.push(CharPoint {
+        p: Point { x: 0, y: 0 },
+        c: upper_left,
+    });
+    cl.push(CharPoint {
+        p: Point { x: 2, y: 0 },
+        c: upper_right,
+    });
+    cl.push(CharPoint {
+        p: Point { x: 0, y: 2 },
+        c: lower_left,
+    });
+    cl.push(CharPoint {
+        p: Point { x: 2, y: 2 },
+        c: lower_right,
+    });
+    cl
+}
+
+fn create_real_needle_vec() -> Vec<CharLine> {
+    let mut needles = Vec::new();
+
+    // we have 6 configurations for how MAS can be crossed:
+    needles.push(xmas(b'M', b'M', b'S', b'S'));
+    needles.push(xmas(b'M', b'S', b'M', b'S'));
+    needles.push(xmas(b'M', b'S', b'S', b'M'));
+    needles.push(xmas(b'S', b'M', b'S', b'M'));
+    needles.push(xmas(b'S', b'M', b'M', b'S'));
+    needles.push(xmas(b'S', b'S', b'M', b'M'));
+
+    needles
+}
+
 fn main() {
     let c = get_contents();
     let grid = create_2d_view(&c);
-    let needles = create_needle_vec();
+    // let needles = create_needle_vec();
+    let needles = create_real_needle_vec();
     let mut sum = 0;
 
     for n in needles {
         sum += cnt_matches(&n, &grid);
     }
     println!("{}", sum);
+    // p1 should be 2593
 }
