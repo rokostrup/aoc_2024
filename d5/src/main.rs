@@ -89,7 +89,7 @@ fn is_update_ok(update: &Update, rules: &Rules) -> bool {
     true
 }
 
-fn main() {
+fn solve_part_1() -> () {
     let (rules, updates) = parse_txt();
 
     let total: u32 = updates
@@ -97,5 +97,37 @@ fn main() {
         .filter(|u| is_update_ok(u, &rules))
         .map(|u| get_middle_num(&u))
         .sum();
-    println!("{total}");
+    println!("p1 = {total}");
+}
+
+fn sort_update(update: &Update, rules: &Rules) -> Update {
+    let mut sorted = update.clone();
+
+    for entry in update.iter() {
+        let nb = numbers_before_page(*entry, rules)
+            .iter()
+            .filter(|p| update.contains(p))
+            .count();
+
+        sorted[nb] = *entry;
+    }
+
+    sorted
+}
+
+fn solve_part_2() -> () {
+    let (rules, updates) = parse_txt();
+    let total: u32 = updates
+        .iter()
+        .filter(|u| !is_update_ok(u, &rules))
+        .map(|u| sort_update(u, &rules))
+        .map(|u| get_middle_num(&u))
+        .sum();
+
+    println!("p2 = {total}");
+}
+
+fn main() {
+    solve_part_1();
+    solve_part_2();
 }
