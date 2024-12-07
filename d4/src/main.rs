@@ -2,31 +2,6 @@ use std::fs;
 
 fn get_contents() -> String {
     fs::read_to_string("input.txt").expect("Should have been able to read the file")
-    //     String::from(
-    //         r".M.S......
-    // ..A..MSMS.
-    // .M.S.MAA..
-    // ..A.ASMSM.
-    // .M.S.M....
-    // ..........
-    // S.S.S.S.S.
-    // .A.A.A.A..
-    // M.M.M.M.M.
-    // ..........",
-    //     )
-
-    //     String::from(
-    //         r"MMMSXXMASM
-    // MSAMXMSMSA
-    // AMXSXMAAMM
-    // MSAMASMSMX
-    // XMASAMXAMM
-    // XXAMMXXAMA
-    // SMSMSASXSS
-    // SAXAMASAAA
-    // MAMMMXMMMM
-    // MXMXAXMASX",
-    //     )
 }
 
 struct Point {
@@ -65,7 +40,6 @@ fn matches(char_vec: &CharLine, grid: &Vec<&str>, offset: Point) -> bool {
             return false;
         }
     }
-    println!("Match at {},{}", offset.x, offset.y);
     return true;
 }
 
@@ -157,12 +131,10 @@ fn xmas(upper_left: u8, upper_right: u8, lower_left: u8, lower_right: u8) -> Cha
 fn create_real_needle_vec() -> Vec<CharLine> {
     let mut needles = Vec::new();
 
-    // we have 6 configurations for how MAS can be crossed:
+    // we have 4 configurations for how MAS can be crossed:
     needles.push(xmas(b'M', b'M', b'S', b'S'));
     needles.push(xmas(b'M', b'S', b'M', b'S'));
-    needles.push(xmas(b'M', b'S', b'S', b'M'));
     needles.push(xmas(b'S', b'M', b'S', b'M'));
-    needles.push(xmas(b'S', b'M', b'M', b'S'));
     needles.push(xmas(b'S', b'S', b'M', b'M'));
 
     needles
@@ -179,5 +151,4 @@ fn main() {
         sum += cnt_matches(&n, &grid);
     }
     println!("{}", sum);
-    // p1 should be 2593
 }
