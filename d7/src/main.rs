@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use std::fs;
 
 #[derive(Debug)]
@@ -26,43 +27,57 @@ fn parse_line(l: &str) -> ResWithArgs {
 
 fn parse_input() -> TestBook {
     let s = fs::read_to_string("input.txt").expect("Should have been able to read the file");
-    let _s = String::from(
-        r"190: 10 19
-3267: 81 40 27
-83: 17 5
-156: 15 6
-7290: 6 8 6 15
-161011: 16 10 13
-192: 17 8 14
-21037: 9 7 18 13
-292: 11 6 16 20",
-    );
 
     s.split_terminator('\n').map(parse_line).collect()
 }
 
-fn can_results_work(rwa: &ResWithArgs) -> bool {
+fn can_res_work(rwa: &ResWithArgs, f: fn(&u64, &u64) -> Vec<u64>) -> bool {
     let mut combs = vec![0 as u64];
     for arg in rwa.args.iter() {
         // take the current number and combine it with all
         combs = combs
             .iter()
-            .flat_map(|x| vec![x * arg, x + arg])
+            .flat_map(|x| f(x, arg))
             .filter(|x| *x > 0)
+            .dedup()
             .collect();
     }
 
     combs.contains(&rwa.res)
 }
 
+// takes in a function, f, that expands the
+// current number into a new branch for each operator
+fn sum_working_res_by_op(book: &TestBook, f: fn(&u64, &u64) -> Vec<u64>) -> u64 {
+    book.iter()
+        .filter(|x| can_res_work(x, f))
+        .map(|x| x.res)
+        .sum()
+}
+
+fn part_1(book: &TestBook) -> () {
+    let total = sum_working_res_by_op(book, |x, y| vec![x * y, x + y]);
+    println!("p1 = {total}");
+}
+
+fn concat_numbers(lhs: u64, rhs: u64) -> u64 {
+    // we note that concatenating dec numbers is like
+    // a shift in decimal (i.e., 10 multiplication)
+    // and an add. we therefore need to find the
+    // number of digits, n, in the rhs number
+    // and mulitply this lhs number with 10^(n+1)
+
+    let exp = (rhs as f64).log10().floor() as u32 + 1;
+    lhs * (10 as u64).pow(exp) + rhs
+}
+
+fn part_2(book: &TestBook) -> () {
+    let total = sum_working_res_by_op(book, |x, y| vec![x * y, x + y, concat_numbers(*x, *y)]);
+    println!("p2 = {total}");
+}
+
 fn main() {
     let book = parse_input();
-    // println!("{book:?}");
-    let total: u64 = book
-        .iter()
-        .filter(|x| can_results_work(x))
-        .map(|x| x.res)
-        .sum();
-
-    println!("{total}");
+    part_1(&book);
+    part_2(&book);
 }
