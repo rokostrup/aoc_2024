@@ -52,10 +52,7 @@ impl Guard {
             return WalkResult::Exit;
         }
 
-        let mut new_hit = false;
-        if let Some(p) = self.new_ob {
-            new_hit = p == new_pos;
-        }
+        let new_hit = matches!(self.new_ob, Some(p) if p == new_pos);
 
         // still on the map - hit an obstacle?
         if new_hit || self.obs.contains(&new_pos) {
@@ -66,6 +63,7 @@ impl Guard {
         self.pos = new_pos;
 
         // cache visited places (with a direction!) for faster loop detection
+        // if already present, loop detected -> abort
         if !self.vis_w_dir.insert(Arrow {
             p: new_pos,
             dir: self.dir,
@@ -137,10 +135,8 @@ fn parse_input() -> Guard {
     }
 }
 
-// loop detection - cache guards position and direction
-// if already present, loop detected -> abort
 fn loop_detected(p: Point, mut g: Guard) -> bool {
-    // add new position to check
+    // add new position to check and clear cache
     g.new_ob = Some(p);
     g.vis_w_dir.clear();
 
@@ -153,9 +149,6 @@ fn loop_detected(p: Point, mut g: Guard) -> bool {
     }
 }
 
-// using the following optimzation tricks
-// object must be where:
-// the guards original path
 fn cnt_loop_locations(candidates: &HashSet<Point>, g: &mut Guard) -> u32 {
     candidates
         .iter()
@@ -180,7 +173,9 @@ fn main() {
     }
 
     println!("p1 = {}", visited.len());
+
     // the start position is not a candidate - remove
     visited.remove(&g_copy.pos);
+    // object must be where the guards original path so use those as  candidates
     println!("p2 = {}", cnt_loop_locations(&visited, &mut g_copy));
 }
