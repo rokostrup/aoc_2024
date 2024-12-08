@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use std::collections::HashMap;
 use std::fs;
 
@@ -35,20 +34,6 @@ type MapSize = Point;
 
 fn parse_input() -> (Antennas, MapSize) {
     let s = fs::read_to_string("input.txt").expect("Should have been able to read the file");
-    let _s = String::from(
-        r"............
-........0...
-.....0......
-.......0....
-....0.......
-......A.....
-............
-............
-........A...
-.........A..
-............
-............",
-    );
 
     let lines = s.split_terminator('\n');
     let rows = lines.clone().into_iter().count();
@@ -61,7 +46,6 @@ fn parse_input() -> (Antennas, MapSize) {
 
     let mut antennas: Antennas = HashMap::new();
 
-    // TODO: this for loop can just be incorporated ito the above chain
     for (row, line) in valid_lines {
         let ind = line.char_indices();
         let valid_antennas = ind.into_iter().filter(|(_, c)| *c != '.');
@@ -89,7 +73,7 @@ fn parse_input() -> (Antennas, MapSize) {
     )
 }
 
-fn find_resonance_point(loc1: &Point, loc2: &Point) -> Point {
+fn find_resonance_points(loc1: &Point, loc2: &Point, repl: bool, m_sz: &MapSize) -> ResonantPoints {
     /*
     ............
     ............
@@ -108,25 +92,30 @@ fn find_resonance_point(loc1: &Point, loc2: &Point) -> Point {
     // above, the diff would be {x = -3, y = 1}
     // now, this difference should be added to loc2 to give
 
-    // println!("F")
     let diff_vec = *loc2 - *loc1;
+    let mut res_loc = *loc2 + diff_vec;
+    if !repl {
+        return vec![res_loc];
+    }
 
-    // println!(
-    //     "loc1 {:?} and loc2 {:?} generates {:?}",
-    //     loc1,
-    //     loc2,
-    //     *loc2 + diff_vec
-    // );
-    *loc2 + diff_vec
+    // for two antennas we always hit the antenna locs
+    let mut all_res: ResonantPoints = vec![*loc1, *loc2];
+    while is_within_map(m_sz, &res_loc) {
+        all_res.push(res_loc);
+        // go to next resonance point
+        res_loc = res_loc + diff_vec;
+    }
+
+    all_res
 }
 
 // given a list of antenna locations, where do the resonant frequencies fall?
-fn calc_resonance_points(locs: &AntennaLocs) -> ResonantPoints {
+fn calc_resonance_points(locs: &AntennaLocs, repl: bool, m_sz: &MapSize) -> ResonantPoints {
     locs.iter()
         .flat_map(|loc1| {
             locs.iter()
                 .filter(|loc2| *loc1 != **loc2)
-                .map(|loc2| find_resonance_point(loc1, loc2))
+                .flat_map(|loc2| find_resonance_points(loc1, loc2, repl, m_sz))
         })
         .collect()
 }
@@ -135,26 +124,24 @@ fn is_within_map(m_sz: &MapSize, p: &Point) -> bool {
     p.x < m_sz.x && p.y < m_sz.y && p.x >= 0 && p.y >= 0
 }
 
-fn main() {
-    let (antennas, m_sz) = parse_input();
-    // println!("{:?}", antennas);
-    // let first_entry = antennas.get(&'0');
-    // println!("{:?}", calc_resonance_points(&first_entry.unwrap()));
-
+fn solve(antennas: &Antennas, repl: bool, m_sz: &MapSize) -> () {
     let mut total: Vec<Point> = antennas
         .iter()
-        .flat_map(|(_, locs)| calc_resonance_points(locs))
+        .flat_map(|(_, locs)| calc_resonance_points(locs, repl, &m_sz))
         .filter(|p| is_within_map(&m_sz, p))
         .collect();
 
     total.sort();
     total.dedup(); // we need to find unique locations
 
-    // println!("Map size = {:?}", m_sz);
+    println!("{:?}", total.len());
+}
 
-    // for rloc in total {
-    //     println!("{:?}", rloc);
-    // }
+fn main() {
+    let (antennas, m_sz) = parse_input();
 
-    println!("p1 = {:?}", total.len());
+    let part_1_repl = false;
+    solve(&antennas, part_1_repl, &m_sz);
+    let part_2_repl = true;
+    solve(&antennas, part_2_repl, &m_sz);
 }
