@@ -1,11 +1,13 @@
 use std::{fs, vec};
 
 fn parse_input() -> String {
-    let s = fs::read_to_string("input.txt").expect("Should have been able to read the file");
-    // let s = String::from("12345");
+    // let s = fs::read_to_string("input.txt").expect("Should have been able to read the file");
+    let s = String::from("12345");
     // let s = String::from("2333133121414131402");
     // let s = String::from("233313312141413140211"); // res 2132
 
+    // remove the newline
+    let s: String = s.chars().filter(|c| c.is_ascii_alphanumeric()).collect();
     s
 }
 
@@ -67,7 +69,7 @@ fn defrag_disk(files: &Files, free_space: &FreeSpace) {
     println!("cs = {:?}", checksum(&compressed));
 }
 
-fn part_1(disk: &String) {
+fn split_disk(disk: &String) -> (Files, FreeSpace) {
     let to_num = disk.chars().map(|c| c.to_digit(10).unwrap()).enumerate();
     let files: Vec<DiskFile> = to_num
         .clone()
@@ -88,14 +90,58 @@ fn part_1(disk: &String) {
         free_space.push(0);
     }
 
+    (files, free_space)
+}
+
+fn part_1(files: &Files, free_space: &FreeSpace) {
     defrag_disk(&files, &free_space);
+}
+
+fn defrag_disk_fast(files: &Files, free_space: &FreeSpace) {
+    // read all the ids backwards
+    let mut to_comp = files.iter().rev();
+    // let mut to_comp_f = files.iter();
+
+    let mut free_space = free_space.clone();
+
+    for file in to_comp {
+        println!("{:?}", file);
+
+        let mut first_free = free_space.iter().find(|fs| *fs >= &file.size);
+
+        if let Some(x) = first_free {
+            println!("{:?}", x);
+        }
+    }
+
+    // algo:
+    // 1. scan the files _backwards_
+    // 2. for each file, find the first contiguous place where we can place the file
+    // 3. we keep track of all the used space
+    // let mut defragged: Blocks = Vec::new();
+    // for (file, free) in files.iter().zip(free_space.iter()) {
+    //     // first we expand the file,
+    //     // then we fill in the free space by reading the expanded files backwards
+    //     defragged.append(&mut expand_file(file));
+    //     defragged.append(&mut read_n_from_iter(&mut to_comp, *free));
+    // }
+
+    // // our defragged disk contains duplicates, so remove those that we moved up front
+    // let compressed = defragged
+    //     .split_at(defragged.len() - free_space.iter().sum::<u32>() as usize)
+    //     .0;
+
+    // println!("cs = {:?}", checksum(&compressed));
+}
+
+fn part_2(files: &Files, free_space: &FreeSpace) {
+    defrag_disk_fast(&files, &free_space);
 }
 
 fn main() {
     let disk = parse_input();
 
-    let iter: String = disk.chars().filter(|c| c.is_ascii_alphanumeric()).collect();
-
-    part_1(&iter);
-    //
+    let (files, free_space) = split_disk(&disk);
+    // part_1(&files, &free_space);
+    part_2(&files, &free_space);
 }
