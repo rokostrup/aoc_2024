@@ -18,6 +18,7 @@ struct TopoPoint {
 struct Walk {
     pos: TopoPoint,
     visited: HashSet<Point>,
+    rating: u32,
 }
 
 type TopoRow = Vec<Option<TopoPoint>>;
@@ -67,21 +68,22 @@ fn create_walks(start_points: &Vec<TopoPoint>) -> Vec<Walk> {
         .map(|tp| Walk {
             pos: *tp,
             visited: HashSet::new(),
+            rating: 0,
         })
         .collect()
 }
 
 fn parse_input() -> TopoMap {
     let s = fs::read_to_string("input.txt").expect("Should have been able to read the file");
-    //     let s = String::from(
-    //         r"...0...
-    // ...1...
-    // ...2...
-    // 6543456
-    // 7.....7
-    // 8.....8
-    // 9.....9",
-    //     );
+    let _s = String::from(
+        r"..90..9
+...1.98
+...2..7
+6543456
+765.987
+876....
+987....",
+    );
     // let s = String::from("2333133121414131402");
     // let s = String::from("233313312141413140211"); // res 2132
 
@@ -186,7 +188,7 @@ fn count_walks(walk: &mut Walk, map: &TopoMap) -> () {
     }
 }
 
-fn main() {
+fn part_1() {
     let map = parse_input();
     let start_points = find_start_points(&map);
 
@@ -204,4 +206,37 @@ fn main() {
     }
     // count the visited walks where the height is 9
     println!("{:?}", total);
+}
+
+fn cnt_distinct_walks(walk: &mut Walk, map: &TopoMap) -> () {
+    let dirs = get_possible_dirs(walk, map);
+
+    for dir in dirs {
+        // update the walk
+        // println!("Walking to {:?}", dir);
+        walk.pos = dir;
+        if dir.height == 9 {
+            walk.rating += 1;
+        }
+        cnt_distinct_walks(walk, map);
+    }
+}
+
+fn part_2() {
+    let map = parse_input();
+    let start_points = find_start_points(&map);
+
+    let mut walks = create_walks(&start_points);
+
+    let mut total = 0;
+    for walk in walks.iter_mut() {
+        cnt_distinct_walks(walk, &map);
+        total += walk.rating;
+    }
+
+    println!("{:?}", total);
+}
+
+fn main() {
+    part_2();
 }
