@@ -1,3 +1,4 @@
+use std::collections::LinkedList;
 use std::{fs, vec};
 
 fn parse_input() -> String {
@@ -15,6 +16,7 @@ fn parse_input() -> String {
 struct DiskFile {
     id: u32,
     size: u32,
+    pos: u32,
 }
 type Files = Vec<DiskFile>;
 type Blocks = Vec<DiskFile>;
@@ -22,7 +24,12 @@ type Blocks = Vec<DiskFile>;
 type FreeSpace = Vec<u32>;
 
 fn expand_file(f: &DiskFile) -> Blocks {
-    vec![DiskFile { id: f.id, size: 1 }].repeat(f.size as usize)
+    vec![DiskFile {
+        id: f.id,
+        size: 1,
+        pos: 0,
+    }]
+    .repeat(f.size as usize)
 }
 
 // needed help from copilot to figure out the lifetimes and syntax for
@@ -77,6 +84,7 @@ fn split_disk(disk: &String) -> (Files, FreeSpace) {
         .map(|(id_x2, n)| DiskFile {
             id: id_x2 as u32 / 2,
             size: n,
+            pos: 0,
         })
         .collect();
 
@@ -103,16 +111,24 @@ fn defrag_disk_fast(files: &Files, free_space: &FreeSpace) {
     // let mut to_comp_f = files.iter();
 
     let mut free_space = free_space.clone();
+    // given only the free space and the whole list of files, how many can we fit in?
 
-    for file in to_comp {
-        println!("{:?}", file);
-
-        let mut first_free = free_space.iter().find(|fs| *fs >= &file.size);
-
-        if let Some(x) = first_free {
-            println!("{:?}", x);
+    for f in to_comp {
+        let mut first_free = free_space.iter().enumerate().find(|fs| *fs >= &f.size);
+        if let (Some(x)) = first_free {
+            *x.1 -= f.size;
         }
     }
+
+    // for file in to_comp {
+    //     println!("{:?}", file);
+
+    //     let mut first_free = free_space.iter().find(|fs| *fs >= &file.size);
+
+    //     if let Some(x) = first_free {
+    //         println!("{:?}", x);
+    //     }
+    // }
 
     // algo:
     // 1. scan the files _backwards_
