@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Copy, Hash)]
@@ -11,6 +11,16 @@ struct Point {
 struct Vegetable {
     p: Point,
     v: char,
+}
+
+impl ::core::ops::Add for Point {
+    type Output = Point;
+    fn add(self, rhs: Point) -> Point {
+        Point {
+            x: self.x.add(rhs.x),
+            y: self.y.add(rhs.y),
+        }
+    }
 }
 
 type GardenRow = Vec<Vegetable>;
@@ -32,6 +42,15 @@ fn line_to_row(l: &str, row: i32) -> GardenRow {
 
 fn parse_input() -> Garden {
     let _s = String::from(
+        r"AAAAAA
+AAABBA
+AAABBA
+ABBAAA
+ABBAAA
+AAAAAA",
+    );
+
+    let _s = String::from(
         r"OOOOO
 OXOXO
 OOOOO
@@ -46,7 +65,7 @@ BBCC
 EEEC",
     );
 
-    let _s = String::from(
+    let s = String::from(
         r"RRRRIICCFF
 RRRRIICCCF
 VVRRRCCFFF
@@ -110,6 +129,21 @@ fn get_valid_neighbours(v: &Vegetable, garden: &Garden) -> Vec<Vegetable> {
         .iter()
         .filter(|p| is_within_map(*p, &m_sz) && get_vegetable(&garden, p) == v.v)
         .map(|p| Vegetable { p: *p, v: v.v })
+        .collect()
+}
+
+fn get_invalid_neighbours(v: &Vegetable, garden: &Garden) -> Vec<Point> {
+    // map size
+    let m_sz = Point {
+        x: garden[0].len() as i32,
+        y: garden.len() as i32,
+    };
+    // find north west east and south of v
+    let neighbours = get_possible_neigbors(&v.p);
+
+    neighbours
+        .into_iter()
+        .filter(|p| !is_within_map(p, &m_sz) || get_vegetable(&garden, p) != v.v)
         .collect()
 }
 
@@ -186,7 +220,7 @@ fn calc_plot_cost(plot: &Plot) -> usize {
     calc_perimeter(plot) * plot.len()
 }
 
-fn main() {
+fn part_1() {
     let garden = parse_input();
 
     let veggie_types = get_vegetable_types(&garden);
@@ -210,4 +244,137 @@ fn main() {
     // };
     // find_plot(&veg, &garden, &mut visited);
     // println!("C = {:?}", visited);
+}
+
+type FenceCount = HashMap<Point, u32>;
+
+fn create_fence_for_plot(plot: &Plot) -> FenceCount {
+    // for each point, find all possible neighbours.
+    // a possible neighbor is someone who is not already on the plot
+
+    let fences: Vec<Point> = plot
+        .iter()
+        .map(|p| get_possible_neigbors(p))
+        .flat_map(|pnv| pnv.into_iter().filter(|pn| !plot.contains(pn)))
+        .collect();
+
+    let mut multi_fence = HashMap::new();
+
+    // organize the fences nicely
+    for fp in fences {
+        // if multi_fence.
+        if let Some(mf) = multi_fence.get_mut(&fp) {
+            *mf += 1;
+        } else {
+            multi_fence.insert(fp, 1);
+        }
+    }
+
+    multi_fence
+}
+
+fn walk_in_dir(fc: &FenceCount, fp: &Point, dir: Point) -> Vec<Point> {
+    // we start at a point and keep going in a direction
+    let mut next_point = *fp + dir;
+
+    let mut vp = vec![*fp];
+
+    while fc.contains_key(&next_point) {
+        vp.push(next_point);
+        next_point = next_point + dir;
+    }
+
+    vp
+}
+
+// given a point, fp, construct 2 fences (East-West and North-South)
+// then return the longest
+fn construct_longest_fence(fc: &FenceCount, fp: &Point) -> Vec<Point> {
+    // we start at a point and keep going in a direction
+
+    let north = Point { x: 0, y: -1 };
+    let south = Point { x: 0, y: 1 };
+    let east = Point { x: 1, y: 0 };
+    let west = Point { x: -1, y: 0 };
+
+    let mut ew_fence = walk_in_dir(fc, fp, east);
+    ew_fence.extend(walk_in_dir(fc, fp, west));
+    ew_fence.sort();
+    ew_fence.dedup();
+
+    let mut ns_fence = walk_in_dir(fc, fp, north);
+    ns_fence.extend(walk_in_dir(fc, fp, south));
+    ns_fence.sort();
+    ns_fence.dedup();
+
+    if ew_fence.len() > ns_fence.len() {
+        ew_fence
+    } else {
+        ns_fence
+    }
+}
+
+fn find_next_unique_fence(fc: &FenceCount) -> Vec<Point> {
+    let fp = fc.iter().next().unwrap().0;
+    construct_longest_fence(fc, fp)
+}
+
+fn find_unique_fences(fc: &mut FenceCount) -> usize {
+    let mut fence_count = 0;
+    while !fc.is_empty() {
+        fence_count += 1;
+        let unique_fence = find_next_unique_fence(fc);
+
+        // now we subtract all the Points we just used for the fence
+        for p in unique_fence {
+            let fp = fc.get_mut(&p).unwrap();
+            *fp -= 1;
+
+            // clean up
+            if *fp == 0 {
+                fc.remove(&p);
+            }
+        }
+    }
+    fence_count
+}
+
+fn part_2() {
+    let garden = parse_input();
+
+    let veggie_types = get_vegetable_types(&garden);
+    let all_plots: Plots = veggie_types
+        .iter()
+        .flat_map(|v| find_veggie_plots(*v, &garden))
+        .collect();
+
+    let mut total = 0;
+    let total_plots = all_plots.len();
+    for plot in all_plots {
+        let mut fences = create_fence_for_plot(&plot);
+
+        if plot.len() == 101 {
+            println!("Fences = {}", fences_count);
+            println!("{:?}", plot);
+        }
+
+        let fences_count = find_unique_fences(&mut fences);
+        let plot_price = fences_count * plot.len();
+        // println!(
+        //     "MY plots {} * price {} = {}",
+        //     plot.len(),
+        //     fences_count,
+        //     plot_price
+        // );
+
+        total += plot_price;
+        // println!("Found {}", fences_count * plot.len());
+    }
+    println!("Plots found = {}", total_plots);
+    println!("Total {}", total);
+    // println!("{:?} {}", fences, fences.len());
+}
+
+fn main() {
+    part_2();
 }
