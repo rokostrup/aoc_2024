@@ -354,12 +354,18 @@ fn part_2() {
         let mut fences = create_fence_for_plot(&plot);
 
         if plot.len() == 101 {
-            println!("Fences = {}", fences_count);
-            println!("{:?}", plot);
+            // println!("Plot = {:?}", plot);
+            println!("Fences LIST = {:?}", fences);
+            println!("Fences IN = {:?}", fences.len());
         }
 
         let fences_count = find_unique_fences(&mut fences);
         let plot_price = fences_count * plot.len();
+
+        if plot.len() == 101 {
+            println!("Fences OUT = {:?}", fences_count);
+        }
+
         // println!(
         //     "MY plots {} * price {} = {}",
         //     plot.len(),
@@ -375,6 +381,63 @@ fn part_2() {
     // println!("{:?} {}", fences, fences.len());
 }
 
+fn debugfn() {
+    let mut fences: FenceCount = HashMap::new();
+    fences.insert(Point { x: 52, y: 21 }, 1);
+    fences.insert(Point { x: 60, y: 23 }, 1);
+    fences.insert(Point { x: 61, y: 22 }, 2);
+    fences.insert(Point { x: 58, y: 23 }, 1);
+    fences.insert(Point { x: 52, y: 14 }, 1);
+    fences.insert(Point { x: 57, y: 22 }, 1);
+    fences.insert(Point { x: 58, y: 8 }, 1);
+    fences.insert(Point { x: 55, y: 23 }, 2);
+    fences.insert(Point { x: 54, y: 16 }, 2);
+    fences.insert(Point { x: 61, y: 20 }, 3);
+    fences.insert(Point { x: 53, y: 15 }, 2);
+    fences.insert(Point { x: 61, y: 17 }, 2);
+    fences.insert(Point { x: 62, y: 11 }, 1);
+    fences.insert(Point { x: 62, y: 12 }, 1);
+    fences.insert(Point { x: 62, y: 13 }, 1);
+    fences.insert(Point { x: 52, y: 13 }, 1);
+    fences.insert(Point { x: 51, y: 19 }, 1);
+    fences.insert(Point { x: 55, y: 9 }, 1);
+    fences.insert(Point { x: 51, y: 20 }, 1);
+    fences.insert(Point { x: 61, y: 14 }, 3);
+    fences.insert(Point { x: 61, y: 10 }, 1);
+    fences.insert(Point { x: 62, y: 21 }, 1);
+    fences.insert(Point { x: 52, y: 12 }, 1);
+    fences.insert(Point { x: 59, y: 23 }, 1);
+    fences.insert(Point { x: 62, y: 19 }, 1);
+    fences.insert(Point { x: 54, y: 11 }, 3);
+    fences.insert(Point { x: 53, y: 22 }, 1);
+    fences.insert(Point { x: 56, y: 9 }, 2);
+    fences.insert(Point { x: 52, y: 11 }, 1);
+    fences.insert(Point { x: 57, y: 8 }, 1);
+    fences.insert(Point { x: 53, y: 10 }, 1);
+    fences.insert(Point { x: 56, y: 22 }, 2);
+    fences.insert(Point { x: 61, y: 18 }, 2);
+    fences.insert(Point { x: 52, y: 17 }, 1);
+    fences.insert(Point { x: 51, y: 18 }, 1);
+    fences.insert(Point { x: 54, y: 10 }, 1);
+    fences.insert(Point { x: 53, y: 21 }, 2);
+    fences.insert(Point { x: 57, y: 21 }, 3);
+    fences.insert(Point { x: 53, y: 17 }, 1);
+    fences.insert(Point { x: 59, y: 9 }, 1);
+    fences.insert(Point { x: 54, y: 17 }, 2);
+    fences.insert(Point { x: 62, y: 16 }, 1);
+    fences.insert(Point { x: 59, y: 11 }, 3);
+    fences.insert(Point { x: 60, y: 10 }, 1);
+    fences.insert(Point { x: 59, y: 10 }, 1);
+    fences.insert(Point { x: 62, y: 15 }, 1);
+    fences.insert(Point { x: 54, y: 24 }, 1);
+    fences.insert(Point { x: 53, y: 23 }, 1);
+
+    let fences_count = find_unique_fences(&mut fences);
+
+    println!("COUNT = {}", fences_count);
+}
+
 fn main() {
-    part_2();
+    // part_2();
+    debugfn();
 }
