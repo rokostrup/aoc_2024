@@ -2,8 +2,8 @@ use std::fs;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Copy, Hash)]
 struct Point {
-    x: i32,
-    y: i32,
+    x: i128,
+    y: i128,
 }
 
 impl ::core::ops::Add for Point {
@@ -40,7 +40,7 @@ struct Problem {
     prize: Prize,
 }
 
-fn line_to_point(l: &str) -> Point {
+fn line_to_point(l: &str, offset: i128) -> Point {
     let sp = l.split_ascii_whitespace();
 
     let mut x = 0;
@@ -51,25 +51,28 @@ fn line_to_point(l: &str) -> Point {
             // find ,
             let i = s.find(',');
             if i.is_none() {
-                x = s[2..].parse::<i32>().unwrap();
+                x = s[2..].parse::<i128>().unwrap();
             } else {
-                x = s[2..i.unwrap()].parse::<i32>().unwrap();
+                x = s[2..i.unwrap()].parse::<i128>().unwrap();
             }
         } else if s.starts_with("Y") {
-            y = s[2..].parse::<i32>().unwrap();
+            y = s[2..].parse::<i128>().unwrap();
         }
     }
 
-    Point { x, y }
+    Point {
+        x: x + offset,
+        y: y + offset,
+    }
 }
 
 fn to_problem(l1: &str, l2: &str, l3: &str) -> Problem {
     Problem {
         claw: Claw {
-            a: line_to_point(l1),
-            b: line_to_point(l2),
+            a: line_to_point(l1, 0),
+            b: line_to_point(l2, 0),
         },
-        prize: line_to_point(l3),
+        prize: line_to_point(l3, 10000000000000),
     }
 }
 
@@ -112,72 +115,11 @@ Prize: X=18641, Y=10279",
     v
 }
 
-fn surpassed(prize: &Prize, pos_sol: &Point) -> bool {
-    pos_sol.x > prize.x || pos_sol.y > prize.y
-}
-
-// fn solved(prize: Prize, )
-fn push_button(pushes: i32, button: &Point) -> Point {
-    Point {
-        x: button.x * pushes,
-        y: button.y * pushes,
-    }
-}
-
-fn can_hit_perfectly(prize: &Prize, button: &Point, offset: &Point) -> Option<i32> {
-    let prize = *prize - *offset;
-
-    if prize.x % button.x != 0 {
-        return None;
-    }
-    if prize.y % button.y != 0 {
-        return None;
-    }
-
-    let divy = prize.y / button.y;
-    let divx = prize.x / button.x;
-
-    if divx != divy {
-        return None;
-    }
-
-    return Some(divy);
-}
-
-type Solutions = Vec<Point>;
-fn solve(p: &Problem) -> Solutions {
-    let mut v: Solutions = Vec::new();
-
-    // for each push of a, we see how many pushes it takes
-    // to either hit or get over the price point
-
-    let mut a = 0;
-    let claw = p.claw;
-    let prize = p.prize;
-    loop {
-        let pos_sol = push_button(a, &claw.a);
-
-        // now we check if we surpassed the limit
-        if surpassed(&prize, &pos_sol) {
-            break; // no more solutions to look for
-        }
-
-        // we pushed a times - and did not surpass the prize
-        // can we find a perfect solution for y?
-        if let Some(b) = can_hit_perfectly(&prize, &claw.b, &pos_sol) {
-            v.push(Point { x: a, y: b });
-        }
-
-        a += 1;
-    }
-
-    v
-}
-
 fn cost(sol: &Point) -> usize {
     sol.x as usize * 3 + sol.y as usize
 }
 
+type Solutions = Vec<Point>;
 fn find_cheapest(sols: &Solutions) -> usize {
     sols.into_iter()
         .map(|p| cost(p))
@@ -186,12 +128,55 @@ fn find_cheapest(sols: &Solutions) -> usize {
         .unwrap() as usize
 }
 
+/*
+example of solving analytically:
+
+sol for b:
+b = (c1*x0 - x1*c0) / (y1 * x0 - y0 * x1)
+
+sol for a:
+a = (c0 - b*y0) / x0
+
+testing with
+x0 = 94
+y0 = 22
+x1 = 34
+y1 = 67
+c0 = 8400
+c1 = 5400
+*/
+fn math_solver(x0: i128, y0: i128, x1: i128, y1: i128, c0: i128, c1: i128) -> Option<(i128, i128)> {
+    let denom = y1 * x0 - y0 * x1;
+    let nom = c1 * x0 - x1 * c0;
+    let b = (c1 * x0 - x1 * c0) / (y1 * x0 - y0 * x1);
+    let a = (c0 - b * y0) / x0;
+
+    if c0 != a * x0 + b * y0 {
+        return None;
+    }
+    if c1 != a * x1 + b * y1 {
+        return None;
+    }
+
+    Some((a, b))
+}
+
+fn solve(p: &Problem) -> Solutions {
+    let mut v: Solutions = Vec::new();
+
+    if let Some(sol) = math_solver(
+        p.claw.a.x, p.claw.b.x, p.claw.a.y, p.claw.b.y, p.prize.x, p.prize.y,
+    ) {
+        v.push(Point { x: sol.0, y: sol.1 });
+    }
+    v
+}
+
 fn main() {
+    // set offset in parse input to 0 for part 1
+    // set offset to 10000000000000 for part 2
     let problems = parse_input();
 
-    // let sol = solve(&prob);
-
-    // println!("Sol = {:?}", sol);
     let cheapest: usize = problems
         .iter()
         .map(|prob| solve(prob))
@@ -199,10 +184,5 @@ fn main() {
         .map(|sols| find_cheapest(&sols))
         .sum();
 
-    // for prob in problems {
-    //     println!("Input = {:?}", prob);
-    //     let sol = solve(&prob);
-    //     println!("Solve = {:?}", sol);
-    // }
-    println!("Cost {:?}", cheapest);
+    println!("Solution = {:?}", cheapest);
 }
